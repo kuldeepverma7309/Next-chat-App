@@ -1,101 +1,89 @@
-import Image from "next/image";
+'use client'
+import ChatForm from '@/components/ChatForm'
+import ChatMessage from '@/components/ChatMessage'
+import React from 'react'
+import { socket } from '@/lib/socketClient'
 
-export default function Home() {
+const Home = () => {
+  const [messages, setMessages] = React.useState<{ sender: string, message: string }[]>([])
+  const [room, setRoom] = React.useState("")
+  const [username, setUsername] = React.useState("")
+  const [joined, setJoined] = React.useState(false)
+  const [notification, setNotification] = React.useState("")
+
+  const handleSendMessage = (message: string) => {
+    // console.log(message)
+    const data = { room, message, sender: username }
+    setMessages((prev) => [...prev, { sender: username, message }])
+    socket.emit('message', data)
+
+  }
+
+
+  React.useEffect(() => {
+    socket.on('message', (data) => {
+      console.log(data)
+      setMessages((prev) => [...prev, data])
+    })
+
+    // socket.on('user-joined', (message) => {
+    //   setMessages((prev) => [...prev, { sender: 'system', message }])
+    // })
+
+    socket.on('join-notification', (message) => {
+      alert(message)
+    })
+    return () => {
+      socket.off('user-joined')
+      socket.off('message')
+    }
+  }, [])
+
+  const handleJoidRoom = () => {
+    if (username && room) {
+      // console.log(`username: ${username}, room: ${room}`)
+      socket.emit('join-room', { room, username })
+      setJoined(true)
+    }
+  }
+
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <div className='flex mt-24 w-full justify-center'>
+      {
+        !joined ?
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+          (<div className='flex-col gap-3 flex'>
+            <h1 className='mb-4 text-2xl font-bold'>Join Room</h1>
+            <input type="text" placeholder="Username" className="px-4 border-2 py-2 rounded-lg focus:outline-none mb-4"
+              onChange={(e) => setUsername(e.target.value)}
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+            <input type="text" placeholder="Room" className="px-4 border-2 py-2 rounded-lg focus:outline-none mb-4"
+              onChange={(e) => setRoom(e.target.value)}
+            />
+            <button className='px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-800 text-white font-semibold'
+              onClick={handleJoidRoom}
+            >
+              Join
+            </button>
+          </div>)
+
+          :
+
+          (<div className='w-full max-w-3xl mx-auto'>
+            <h1 className='mb-4 text-2xl font-bold'>Room: {room}</h1>
+            <div className='h-[500px] overflow-y-auto p-4 mb-4 bg-gray-200 border-2 rounded-lg'>
+              {
+                messages.map((msg, i) => (
+                  <ChatMessage key={i} sender={msg.sender} username = {username} message={msg.message} isOwnMessage={msg.sender === username} />
+                ))
+              }
+            </div>
+            <ChatForm onSendMessage={handleSendMessage} />
+          </div>)
+      }
     </div>
-  );
+  )
 }
+
+export default Home
